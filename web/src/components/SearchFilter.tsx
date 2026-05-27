@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -12,10 +14,10 @@ const SearchFilter: React.FC<SearchFilterProps> = ({ onSearch, onFilter, activeF
   const { t } = useTranslation();
 
   const filters = [
-    { id: 'all', label: 'all', hi: 'all_hi' },
-    { id: 'low_stock', label: 'low_stock', hi: 'low_stock_hi' },
-    { id: 'grocery', label: 'grocery', hi: 'grocery_hi' },
-    { id: 'dairy', label: 'dairy', hi: 'dairy_hi' },
+    { id: 'all', label: 'all' },
+    { id: 'low_stock', label: 'low_stock' },
+    { id: 'grocery', label: 'grocery' },
+    { id: 'dairy', label: 'dairy' },
   ];
 
   return (
@@ -39,7 +41,7 @@ const SearchFilter: React.FC<SearchFilterProps> = ({ onSearch, onFilter, activeF
             <button
               key={filter.id}
               onClick={() => onFilter(filter.id)}
-              className={`flex-shrink-0 px-4 py-2 rounded-xl border transition-all flex flex-col items-center min-w-[70px] ${
+              className={`flex-shrink-0 px-4 py-2 rounded-xl border transition-all flex items-center justify-center min-w-[70px] ${
                 isActive 
                   ? 'bg-primary border-primary text-white shadow-md' 
                   : 'bg-white border-slate-200 text-slate-600 active:bg-slate-50'
@@ -47,9 +49,6 @@ const SearchFilter: React.FC<SearchFilterProps> = ({ onSearch, onFilter, activeF
             >
               <span className="text-[10px] font-bold uppercase tracking-tight leading-none">
                 {t(`common.${filter.label}`)}
-              </span>
-              <span className={`text-[9px] font-medium leading-none mt-0.5 ${isActive ? 'opacity-80' : 'text-slate-400'}`}>
-                {t(`common.${filter.hi}`)}
               </span>
             </button>
           );

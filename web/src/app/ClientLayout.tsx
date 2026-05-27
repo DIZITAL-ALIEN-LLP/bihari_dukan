@@ -4,10 +4,6 @@ import React, { useEffect, useState } from 'react';
 import '../i18n/config';
 import TopAppBar from '@/components/TopAppBar';
 import BottomNavBar from '@/components/BottomNavBar';
-import { Inter } from 'next/font/google';
-
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
-
 import { usePathname } from 'next/navigation';
 
 export default function ClientLayout({
@@ -26,7 +22,7 @@ export default function ClientLayout({
 
   if (!mounted) {
     return (
-      <div className={`${inter.variable} font-sans min-h-screen bg-background`}>
+      <div className="min-h-screen bg-background font-sans">
         {children}
       </div>
     );
@@ -34,14 +30,14 @@ export default function ClientLayout({
 
   if (isLoginPage) {
     return (
-      <div className={`${inter.variable} font-sans min-h-screen bg-background`}>
+      <div className="min-h-screen bg-background font-sans">
         {children}
       </div>
     );
   }
 
   return (
-    <div className={`${inter.variable} font-sans min-h-screen bg-background pb-20 pt-16`}>
+    <div className="min-h-screen bg-background pb-20 pt-16 font-sans">
       <TopAppBar />
       <main className="p-4 max-w-lg mx-auto">
         {children}

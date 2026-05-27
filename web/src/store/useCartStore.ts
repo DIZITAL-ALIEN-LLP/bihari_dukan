@@ -1,8 +1,10 @@
 import { create } from 'zustand';
 import { Product, SaleItem } from '../shared/types';
 
+export type CartItem = Omit<SaleItem, 'id' | 'sale_id' | 'created_at'>;
+
 interface CartState {
-  items: SaleItem[];
+  items: CartItem[];
   addItem: (product: Product, quantity: number) => void;
   removeItem: (productId: string) => void;
   clearCart: () => void;
@@ -15,7 +17,7 @@ export const useCartStore = create<CartState>((set) => ({
   addItem: (product, quantity) =>
     set((state) => {
       const existingItem = state.items.find((item) => item.product_id === product.id);
-      let newItems;
+      let newItems: CartItem[];
       if (existingItem) {
         newItems = state.items.map((item) =>
           item.product_id === product.id

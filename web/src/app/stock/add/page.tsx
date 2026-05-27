@@ -3,15 +3,16 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, Save, IndianRupee, Package, Calendar } from 'lucide-react';
+import { ChevronLeft, Save, IndianRupee, Package, Calendar, Loader2 } from 'lucide-react';
+import { productsApi } from '@/lib/api';
 
 export default function AddProductPage() {
   const { t } = useTranslation();
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
-    name_hi: '',
     category: 'grocery',
     barcode: '',
     purchase_price: 0,
@@ -37,11 +38,27 @@ export default function AddProductPage() {
     }
   }, [formData.purchase_price, formData.selling_price]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Saving product:', formData);
-    // In a real app, this would call a Supabase edge function or API
-    router.back();
+    try {
+      setLoading(true);
+      // In a real app, get owner_id from auth
+      const owner_id = '1'; 
+      
+      await productsApi.create({
+        ...formData,
+        owner_id,
+        barcode: formData.barcode || null,
+        expiry_date: formData.expiry_date || null,
+      });
+      
+      router.push('/stock');
+    } catch (err: any) {
+      console.error('Error adding product:', err);
+      alert('Failed to add product: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const inputClass = "w-full p-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm font-medium transition-all";
@@ -59,7 +76,6 @@ export default function AddProductPage() {
         </button>
         <div className="flex flex-col">
           <h1 className="font-bold text-lg text-slate-900 leading-none">{t('common.add_new_product')}</h1>
-          <span className="text-xs font-medium text-slate-400">{t('common.add_new_product_hi')}</span>
         </div>
       </div>
 
@@ -67,11 +83,11 @@ export default function AddProductPage() {
         {/* Product Info Section */}
         <div className="flex flex-col gap-4">
           <h2 className="text-xs font-bold text-primary uppercase tracking-widest border-b border-primary/10 pb-1">
-            Product Info | सामान की जानकारी
+            Product Info
           </h2>
           
           <div>
-            <label className={labelClass}>Product Name | नाम</label>
+            <label className={labelClass}>Product Name</label>
             <input 
               type="text" 
               required
@@ -82,33 +98,22 @@ export default function AddProductPage() {
             />
           </div>
 
-          <div>
-            <label className={labelClass}>Hindi Name | हिंदी नाम</label>
-            <input 
-              type="text" 
-              className={inputClass}
-              placeholder="जैसे: अमूल दूध (1ली)"
-              value={formData.name_hi}
-              onChange={(e) => setFormData({...formData, name_hi: e.target.value})}
-            />
-          </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelClass}>Category | श्रेणी</label>
+              <label className={labelClass}>Category</label>
               <select 
                 className={inputClass}
                 value={formData.category}
                 onChange={(e) => setFormData({...formData, category: e.target.value})}
               >
-                <option value="grocery">Grocery | किराना</option>
-                <option value="dairy">Dairy | डेयरी</option>
-                <option value="snacks">Snacks | स्नैक्स</option>
-                <option value="other">Other | अन्य</option>
+                <option value="grocery">Grocery</option>
+                <option value="dairy">Dairy</option>
+                <option value="snacks">Snacks</option>
+                <option value="other">Other</option>
               </select>
             </div>
             <div>
-              <label className={labelClass}>Barcode | बारकोड</label>
+              <label className={labelClass}>Barcode</label>
               <input 
                 type="text" 
                 className={inputClass}
@@ -123,12 +128,12 @@ export default function AddProductPage() {
         {/* Pricing Section */}
         <div className="flex flex-col gap-4">
           <h2 className="text-xs font-bold text-primary uppercase tracking-widest border-b border-primary/10 pb-1">
-            Pricing | कीमत
+            Pricing
           </h2>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelClass}>Purchase | खरीद मूल्य</label>
+              <label className={labelClass}>Purchase Price</label>
               <div className="relative">
                 <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
                 <input 
@@ -141,7 +146,7 @@ export default function AddProductPage() {
               </div>
             </div>
             <div>
-              <label className={labelClass}>Selling | बिक्री मूल्य</label>
+              <label className={labelClass}>Selling Price</label>
               <div className="relative">
                 <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
                 <input 
@@ -173,12 +178,12 @@ export default function AddProductPage() {
         {/* Stock Section */}
         <div className="flex flex-col gap-4">
           <h2 className="text-xs font-bold text-primary uppercase tracking-widest border-b border-primary/10 pb-1">
-            Stock | स्टॉक
+            Stock
           </h2>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelClass}>Current | वर्तमान स्टॉक</label>
+              <label className={labelClass}>Current Stock</label>
               <div className="relative">
                 <Package className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
                 <input 
@@ -191,7 +196,7 @@ export default function AddProductPage() {
               </div>
             </div>
             <div>
-              <label className={labelClass}>Min Alert | कम स्टॉक अलर्ट</label>
+              <label className={labelClass}>Min Alert</label>
               <input 
                 type="number" 
                 required
@@ -203,7 +208,7 @@ export default function AddProductPage() {
           </div>
 
           <div>
-            <label className={labelClass}>Expiry Date | समाप्ति तिथि</label>
+            <label className={labelClass}>Expiry Date</label>
             <div className="relative">
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
               <input 
@@ -219,10 +224,11 @@ export default function AddProductPage() {
         {/* Submit Button */}
         <button 
           type="submit"
-          className="w-full bg-primary text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-all mt-4"
+          disabled={loading}
+          className="w-full bg-primary text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-all mt-4 disabled:opacity-50"
         >
-          <Save size={20} />
-          <span>Save Product | सामान सुरक्षित करें</span>
+          {loading ? <Loader2 className="animate-spin" /> : <Save size={20} />}
+          <span>Save Product</span>
         </button>
       </form>
       

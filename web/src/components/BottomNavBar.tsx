@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { Home, Receipt, Package, BarChart3, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -9,11 +11,11 @@ const BottomNavBar = () => {
   const pathname = usePathname();
 
   const navItems = [
-    { icon: Home, label: 'home', hi: 'home_hi', path: '/' },
-    { icon: Receipt, label: 'billing', hi: 'billing_hi', path: '/billing' },
-    { icon: Package, label: 'stock', hi: 'stock_hi', path: '/stock' },
-    { icon: BarChart3, label: 'reports', hi: 'reports_hi', path: '/reports' },
-    { icon: Users, label: 'staff', hi: 'staff_hi', path: '/staff' },
+    { icon: Home, label: 'home', path: '/' },
+    { icon: Receipt, label: 'billing', path: '/billing' },
+    { icon: Package, label: 'stock', path: '/stock' },
+    { icon: BarChart3, label: 'reports', path: '/reports' },
+    { icon: Users, label: 'staff', path: '/staff' },
   ];
 
   return (
@@ -31,14 +33,9 @@ const BottomNavBar = () => {
             <div className={`p-1 rounded-xl transition-colors ${isActive ? 'bg-blue-50' : ''}`}>
               <item.icon size={20} strokeWidth={isActive ? 2.5 : 2} />
             </div>
-            <div className="flex flex-col items-center -gap-1">
-              <span className="text-[10px] font-bold leading-none uppercase tracking-tighter">
-                {t(`common.${item.label}`)}
-              </span>
-              <span className="text-[9px] font-medium leading-none">
-                {t(`common.${item.hi}`)}
-              </span>
-            </div>
+            <span className="text-[10px] font-bold leading-none uppercase tracking-tighter">
+              {t(`common.${item.label}`)}
+            </span>
           </Link>
         );
       })}

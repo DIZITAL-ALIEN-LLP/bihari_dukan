@@ -1,64 +1,76 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCartStore } from '@/store/useCartStore';
 import { Product } from '@/shared/types';
-import { Search, ScanBarcode, Minus, Plus, Trash2, Banknote, QrCode } from 'lucide-react';
-
-const MOCK_PRODUCTS: Product[] = [
-  {
-    id: '1',
-    name: 'Amul Milk (1L)',
-    name_hi: 'अमूल दूध (1ली)',
-    category: 'dairy',
-    purchase_price: 60,
-    selling_price: 64,
-    current_stock: 42,
-    min_stock_alert: 10,
-    unit: 'pcs',
-  },
-  {
-    id: '2',
-    name: 'Fortune Oil (1L)',
-    name_hi: 'फॉर्च्यून तेल (1ली)',
-    category: 'grocery',
-    purchase_price: 140,
-    selling_price: 155,
-    current_stock: 5,
-    min_stock_alert: 10,
-    unit: 'pcs',
-  },
-  {
-    id: '4',
-    name: 'Britannia Bread',
-    name_hi: 'ब्रिटानिया ब्रेड',
-    category: 'dairy',
-    purchase_price: 35,
-    selling_price: 40,
-    current_stock: 8,
-    min_stock_alert: 15,
-    unit: 'pcs',
-  },
-];
+import { Search, ScanBarcode, Minus, Plus, Trash2, Banknote, QrCode, Loader2 } from 'lucide-react';
+import { productsApi, salesApi } from '@/lib/api';
+import { isSupabaseConfigured } from '@/lib/supabase';
 
 export default function BillingPage() {
   const { t } = useTranslation();
   const { items, addItem, removeItem, clearCart, total } = useCartStore();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'upi' | null>(null);
 
-  const filteredProducts = MOCK_PRODUCTS.filter((p) => 
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    p.name_hi.includes(searchQuery)
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      
+      let data: Product[] = [];
+      if (isSupabaseConfigured) {
+        data = await productsApi.getAll();
+      }
+
+      if (data && data.length > 0) {
+        setProducts(data);
+      } else {
+        console.log(isSupabaseConfigured ? 'No products found, using mock data...' : 'Supabase not configured, using mock data...');
+        setProducts(MOCK_PRODUCTS);
+      }
+    } catch (err: any) {
+      if (isSupabaseConfigured) {
+        console.error('Error fetching products:', err?.message || err);
+      }
+      // Fallback to mock data for demo
+      setProducts(MOCK_PRODUCTS);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredProducts = products.filter((p) => 
+    p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleCompleteSale = () => {
+  const handleCompleteSale = async () => {
     if (!paymentMethod || items.length === 0) return;
-    console.log('Completing sale:', { items, total, paymentMethod });
-    clearCart();
-    setPaymentMethod(null);
-    alert('Sale Completed Successfully!');
+    
+    try {
+      // In a real app, get owner_id from auth
+      const owner_id = '1'; 
+      
+      await salesApi.create({
+        owner_id,
+        cashier_id: null,
+        total_amount: total,
+        payment_method: paymentMethod,
+      }, items);
+
+      clearCart();
+      setPaymentMethod(null);
+      alert('Sale Completed Successfully!');
+    } catch (err: any) {
+      console.error('Error completing sale:', err);
+      alert('Failed to complete sale: ' + err.message);
+    }
   };
 
   return (
@@ -83,41 +95,46 @@ export default function BillingPage() {
       {/* Frequently Sold / Search Results */}
       {searchQuery ? (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm divide-y divide-slate-100 overflow-hidden">
-          {filteredProducts.map((product) => (
-            <button 
-              key={product.id}
-              onClick={() => {
-                addItem(product, 1);
-                setSearchQuery('');
-              }}
-              className="w-full p-4 flex items-center justify-between active:bg-slate-50 transition-colors"
-            >
-              <div className="flex flex-col items-start">
-                <span className="font-bold text-slate-900 text-sm">{product.name}</span>
-                <span className="text-[10px] font-medium text-slate-400">{product.name_hi}</span>
-              </div>
-              <span className="font-bold text-primary">₹{product.selling_price}</span>
-            </button>
-          ))}
+          {filteredProducts.length === 0 ? (
+            <div className="p-8 text-center text-slate-400 text-xs italic">No items found</div>
+          ) : (
+            filteredProducts.map((product) => (
+              <button 
+                key={product.id}
+                onClick={() => {
+                  addItem(product, 1);
+                  setSearchQuery('');
+                }}
+                className="w-full p-4 flex items-center justify-between active:bg-slate-50 transition-colors"
+              >
+                <div className="flex flex-col items-start min-w-0">
+                  <span className="font-bold text-slate-900 text-sm truncate">{product.name}</span>
+                </div>
+                <span className="font-bold text-primary">₹{product.selling_price}</span>
+              </button>
+            ))
+          )}
         </div>
       ) : (
         <div className="flex flex-col gap-3">
           <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
             <span>Fast Select</span>
-            <span className="text-slate-300 font-normal">|</span>
-            <span className="font-medium text-[10px]">जल्दी चुनें</span>
           </h2>
           <div className="grid grid-cols-2 gap-3">
-            {MOCK_PRODUCTS.slice(0, 4).map((product) => (
-              <button
-                key={product.id}
-                onClick={() => addItem(product, 1)}
-                className="p-3 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform"
-              >
-                <span className="text-xs font-bold text-slate-800 text-center leading-tight">{product.name}</span>
-                <span className="font-black text-primary text-sm">₹{product.selling_price}</span>
-              </button>
-            ))}
+            {loading ? (
+              <div className="col-span-2 py-8 flex justify-center"><Loader2 className="animate-spin text-primary" /></div>
+            ) : (
+              products.slice(0, 4).map((product) => (
+                <button
+                  key={product.id}
+                  onClick={() => addItem(product, 1)}
+                  className="p-3 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform"
+                >
+                  <span className="text-xs font-bold text-slate-800 text-center leading-tight truncate w-full">{product.name}</span>
+                  <span className="font-black text-primary text-sm">₹{product.selling_price}</span>
+                </button>
+              ))
+            )}
           </div>
         </div>
       )}
@@ -126,8 +143,6 @@ export default function BillingPage() {
       <div className="flex flex-col gap-3 flex-1 overflow-y-auto min-h-0">
         <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
           <span>Cart</span>
-          <span className="text-slate-300 font-normal">|</span>
-          <span className="font-medium text-[10px]">झोला</span>
         </h2>
 
         {items.length === 0 ? (
@@ -137,7 +152,7 @@ export default function BillingPage() {
         ) : (
           <div className="flex flex-col gap-3">
             {items.map((item) => {
-              const product = MOCK_PRODUCTS.find(p => p.id === item.product_id);
+              const product = products.find(p => p.id === item.product_id) || MOCK_PRODUCTS.find(p => p.id === item.product_id);
               if (!product) return null;
               return (
                 <div key={item.product_id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
@@ -173,7 +188,6 @@ export default function BillingPage() {
         <div className="flex justify-between items-end px-2">
           <div className="flex flex-col">
             <span className="text-xs font-bold text-slate-500 uppercase">Total Amount</span>
-            <span className="text-[10px] font-medium text-slate-400 leading-none">कुल राशि</span>
           </div>
           <span className="text-3xl font-black text-slate-900 leading-none">₹{total}</span>
         </div>
@@ -190,7 +204,6 @@ export default function BillingPage() {
             <Banknote size={24} />
             <div className="flex flex-col items-center">
               <span className="text-xs font-bold uppercase tracking-tight">{t('common.cash')}</span>
-              <span className="text-[10px] font-medium opacity-80">{t('common.cash_hi')}</span>
             </div>
           </button>
           
@@ -205,7 +218,6 @@ export default function BillingPage() {
             <QrCode size={24} />
             <div className="flex flex-col items-center">
               <span className="text-xs font-bold uppercase tracking-tight">{t('common.upi')}</span>
-              <span className="text-[10px] font-medium opacity-80">{t('common.upi_hi')}</span>
             </div>
           </button>
         </div>
@@ -216,10 +228,24 @@ export default function BillingPage() {
           className="w-full bg-secondary text-white py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-3 shadow-lg active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 transition-all uppercase tracking-wide"
         >
           <span>{t('common.complete_sale')}</span>
-          <span className="opacity-80">|</span>
-          <span className="text-base font-bold">{t('common.complete_sale_hi')}</span>
         </button>
       </div>
     </div>
   );
 }
+
+const MOCK_PRODUCTS: Product[] = [
+  {
+    id: '1',
+    owner_id: '1',
+    name: 'Amul Milk (1L)',
+    category: 'dairy',
+    purchase_price: 60,
+    selling_price: 64,
+    current_stock: 42,
+    min_stock_alert: 10,
+    unit: 'pcs',
+    barcode: null,
+    expiry_date: null
+  },
+];

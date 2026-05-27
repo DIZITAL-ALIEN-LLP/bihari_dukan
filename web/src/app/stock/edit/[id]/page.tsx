@@ -3,17 +3,19 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRouter, useParams } from 'next/navigation';
-import { ChevronLeft, Save, IndianRupee, Package, Calendar, Trash2 } from 'lucide-react';
+import { ChevronLeft, Save, IndianRupee, Package, Calendar, Trash2, Loader2 } from 'lucide-react';
+import { productsApi } from '@/lib/api';
 
 export default function EditProductPage() {
   const { t } = useTranslation();
   const router = useRouter();
   const params = useParams();
   const productId = params.id as string;
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
-    name_hi: '',
     category: 'grocery',
     barcode: '',
     purchase_price: 0,
@@ -28,23 +30,49 @@ export default function EditProductPage() {
   const [profit, setProfit] = useState(0);
 
   useEffect(() => {
-    // In a real app, fetch product by ID from Supabase
-    // For MVP, we'll simulate fetching mock data
-    if (productId === '1') {
-      setFormData({
-        name: 'Amul Milk (1L)',
-        name_hi: 'अमूल दूध (1ली)',
-        category: 'dairy',
-        barcode: '123456789',
-        purchase_price: 60,
-        selling_price: 64,
-        current_stock: 42,
-        min_stock_alert: 10,
-        expiry_date: '2026-06-01',
-        unit: 'pcs',
-      });
-    }
+    fetchProduct();
   }, [productId]);
+
+  const fetchProduct = async () => {
+    try {
+      setLoading(true);
+      const data = await productsApi.getById(productId);
+      if (data) {
+        setFormData({
+          name: data.name,
+          category: data.category,
+          barcode: data.barcode || '',
+          purchase_price: data.purchase_price,
+          selling_price: data.selling_price,
+          current_stock: data.current_stock,
+          min_stock_alert: data.min_stock_alert,
+          expiry_date: data.expiry_date || '',
+          unit: data.unit,
+        });
+      } else {
+        throw new Error('Product not found');
+      }
+    } catch (err: any) {
+      console.error('Error fetching product:', err);
+      // Fallback to mock data for demo
+      const mockProduct = MOCK_PRODUCTS.find(p => p.id === productId) || MOCK_PRODUCTS[0];
+      if (mockProduct) {
+        setFormData({
+          name: mockProduct.name,
+          category: mockProduct.category,
+          barcode: mockProduct.barcode || '',
+          purchase_price: mockProduct.purchase_price,
+          selling_price: mockProduct.selling_price,
+          current_stock: mockProduct.current_stock,
+          min_stock_alert: mockProduct.min_stock_alert,
+          expiry_date: mockProduct.expiry_date || '',
+          unit: mockProduct.unit,
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (formData.purchase_price > 0) {
@@ -58,21 +86,48 @@ export default function EditProductPage() {
     }
   }, [formData.purchase_price, formData.selling_price]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Updating product:', productId, formData);
-    router.back();
+    try {
+      setSaving(true);
+      await productsApi.update(productId, {
+        ...formData,
+        barcode: formData.barcode || null,
+        expiry_date: formData.expiry_date || null,
+      });
+      router.push('/stock');
+    } catch (err: any) {
+      console.error('Error updating product:', err);
+      alert('Failed to update product: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete this product?')) {
-      console.log('Deleting product:', productId);
-      router.back();
+      try {
+        setSaving(true);
+        await productsApi.delete(productId);
+        router.push('/stock');
+      } catch (err: any) {
+        console.error('Error deleting product:', err);
+        alert('Failed to delete product: ' + err.message);
+        setSaving(false);
+      }
     }
   };
 
   const inputClass = "w-full p-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm font-medium transition-all";
   const labelClass = "text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block px-1";
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
@@ -87,12 +142,12 @@ export default function EditProductPage() {
           </button>
           <div className="flex flex-col">
             <h1 className="font-bold text-lg text-slate-900 leading-none">Edit Product</h1>
-            <span className="text-xs font-medium text-slate-400">सामान की जानकारी बदलें</span>
           </div>
         </div>
         <button 
           onClick={handleDelete}
-          className="w-10 h-10 rounded-full bg-alert text-alert-foreground flex items-center justify-center active:scale-95 transition-transform"
+          disabled={saving}
+          className="w-10 h-10 rounded-full bg-alert text-alert-foreground flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50"
         >
           <Trash2 size={20} />
         </button>
@@ -102,11 +157,11 @@ export default function EditProductPage() {
         {/* Product Info Section */}
         <div className="flex flex-col gap-4">
           <h2 className="text-xs font-bold text-primary uppercase tracking-widest border-b border-primary/10 pb-1">
-            Product Info | सामान की जानकारी
+            Product Info
           </h2>
           
           <div>
-            <label className={labelClass}>Product Name | नाम</label>
+            <label className={labelClass}>Product Name</label>
             <input 
               type="text" 
               required
@@ -116,32 +171,22 @@ export default function EditProductPage() {
             />
           </div>
 
-          <div>
-            <label className={labelClass}>Hindi Name | हिंदी नाम</label>
-            <input 
-              type="text" 
-              className={inputClass}
-              value={formData.name_hi}
-              onChange={(e) => setFormData({...formData, name_hi: e.target.value})}
-            />
-          </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelClass}>Category | श्रेणी</label>
+              <label className={labelClass}>Category</label>
               <select 
                 className={inputClass}
                 value={formData.category}
                 onChange={(e) => setFormData({...formData, category: e.target.value})}
               >
-                <option value="grocery">Grocery | किराना</option>
-                <option value="dairy">Dairy | डेयरी</option>
-                <option value="snacks">Snacks | स्नैक्स</option>
-                <option value="other">Other | अन्य</option>
+                <option value="grocery">Grocery</option>
+                <option value="dairy">Dairy</option>
+                <option value="snacks">Snacks</option>
+                <option value="other">Other</option>
               </select>
             </div>
             <div>
-              <label className={labelClass}>Barcode | बारकोड</label>
+              <label className={labelClass}>Barcode</label>
               <input 
                 type="text" 
                 className={inputClass}
@@ -155,12 +200,12 @@ export default function EditProductPage() {
         {/* Pricing Section */}
         <div className="flex flex-col gap-4">
           <h2 className="text-xs font-bold text-primary uppercase tracking-widest border-b border-primary/10 pb-1">
-            Pricing | कीमत
+            Pricing
           </h2>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelClass}>Purchase | खरीद मूल्य</label>
+              <label className={labelClass}>Purchase Price</label>
               <div className="relative">
                 <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
                 <input 
@@ -173,7 +218,7 @@ export default function EditProductPage() {
               </div>
             </div>
             <div>
-              <label className={labelClass}>Selling | बिक्री मूल्य</label>
+              <label className={labelClass}>Selling Price</label>
               <div className="relative">
                 <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
                 <input 
@@ -204,12 +249,12 @@ export default function EditProductPage() {
         {/* Stock Section */}
         <div className="flex flex-col gap-4">
           <h2 className="text-xs font-bold text-primary uppercase tracking-widest border-b border-primary/10 pb-1">
-            Stock | स्टॉक
+            Stock
           </h2>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelClass}>Current | वर्तमान स्टॉक</label>
+              <label className={labelClass}>Current Stock</label>
               <div className="relative">
                 <Package className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
                 <input 
@@ -222,7 +267,7 @@ export default function EditProductPage() {
               </div>
             </div>
             <div>
-              <label className={labelClass}>Min Alert | कम स्टॉक अलर्ट</label>
+              <label className={labelClass}>Min Alert</label>
               <input 
                 type="number" 
                 required
@@ -234,7 +279,7 @@ export default function EditProductPage() {
           </div>
 
           <div>
-            <label className={labelClass}>Expiry Date | समाप्ति तिथि</label>
+            <label className={labelClass}>Expiry Date</label>
             <div className="relative">
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
               <input 
@@ -250,10 +295,11 @@ export default function EditProductPage() {
         {/* Submit Button */}
         <button 
           type="submit"
-          className="w-full bg-primary text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-all mt-4"
+          disabled={saving}
+          className="w-full bg-primary text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-all mt-4 disabled:opacity-50"
         >
-          <Save size={20} />
-          <span>Update Product | जानकारी अपडेट करें</span>
+          {saving ? <Loader2 className="animate-spin" /> : <Save size={20} />}
+          <span>Update Product</span>
         </button>
       </form>
       
@@ -261,3 +307,30 @@ export default function EditProductPage() {
     </div>
   );
 }
+
+const MOCK_PRODUCTS: any[] = [
+  {
+    id: '1',
+    name: 'Amul Milk (1L)',
+    category: 'dairy',
+    purchase_price: 60,
+    selling_price: 64,
+    current_stock: 42,
+    min_stock_alert: 10,
+    expiry_date: '2026-06-01',
+    unit: 'pcs',
+    barcode: '123456789'
+  },
+  {
+    id: '2',
+    name: 'Fortune Oil (1L)',
+    category: 'grocery',
+    purchase_price: 140,
+    selling_price: 155,
+    current_stock: 5,
+    min_stock_alert: 10,
+    unit: 'pcs',
+    expiry_date: null,
+    barcode: null
+  },
+];

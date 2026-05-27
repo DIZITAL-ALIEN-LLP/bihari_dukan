@@ -2,7 +2,6 @@ import React from 'react';
 
 interface MetricCardProps {
   title: string;
-  titleHi: string;
   value: string;
   indicator?: React.ReactNode;
   variant?: 'default' | 'success' | 'alert';
@@ -10,7 +9,6 @@ interface MetricCardProps {
 
 const MetricCard: React.FC<MetricCardProps> = ({ 
   title, 
-  titleHi, 
   value, 
   indicator, 
   variant = 'default' 
@@ -25,7 +23,6 @@ const MetricCard: React.FC<MetricCardProps> = ({
     <div className={`p-4 rounded-2xl border shadow-sm ${variantStyles[variant]}`}>
       <div className="flex flex-col gap-0 mb-2">
         <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{title}</span>
-        <span className="text-[10px] font-medium text-slate-400">{titleHi}</span>
       </div>
       <div className="text-2xl font-bold text-slate-900">{value}</div>
       {indicator && <div className="mt-2">{indicator}</div>}

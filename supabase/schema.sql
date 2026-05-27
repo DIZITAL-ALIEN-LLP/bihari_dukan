@@ -16,7 +16,6 @@ CREATE TABLE products (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   owner_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
-  name_hi TEXT,
   category TEXT DEFAULT 'grocery',
   barcode TEXT,
   purchase_price NUMERIC(10, 2) NOT NULL DEFAULT 0,
