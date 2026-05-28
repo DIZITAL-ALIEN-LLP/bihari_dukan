@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, Save, IndianRupee, Package, Calendar, Loader2 } from 'lucide-react';
 import { productsApi } from '@/lib/api';
+import { getCurrentUser } from '@/lib/supabase';
 
 export default function AddProductPage() {
   const { t } = useTranslation();
@@ -42,8 +43,8 @@ export default function AddProductPage() {
     e.preventDefault();
     try {
       setLoading(true);
-      // In a real app, get owner_id from auth
-      const owner_id = '1'; 
+      const user = await getCurrentUser();
+      const owner_id = user.id; 
       
       await productsApi.create({
         ...formData,

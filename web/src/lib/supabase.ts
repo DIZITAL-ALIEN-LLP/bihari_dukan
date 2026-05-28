@@ -20,3 +20,24 @@ export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co', 
   supabaseAnonKey || 'placeholder-key'
 );
+
+// Helper to get current user ID (mocked for now if not logged in)
+export const getCurrentUser = async () => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) return user;
+    
+    // Fallback for demo mode
+    return {
+      id: 'd3b07384-d990-4395-9056-b054848074d1',
+      email: 'demo@biharikirana.com',
+      user_metadata: { name: 'Demo Owner' }
+    };
+  } catch {
+    return {
+      id: 'd3b07384-d990-4395-9056-b054848074d1',
+      email: 'demo@biharikirana.com',
+      user_metadata: { name: 'Demo Owner' }
+    };
+  }
+};

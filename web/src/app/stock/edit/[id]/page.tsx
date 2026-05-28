@@ -1,13 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { ChevronLeft, Save, IndianRupee, Package, Calendar, Trash2, Loader2 } from 'lucide-react';
 import { productsApi } from '@/lib/api';
+import { MOCK_PRODUCTS } from '@/lib/mockData';
 
 export default function EditProductPage() {
-  const { t } = useTranslation();
   const router = useRouter();
   const params = useParams();
   const productId = params.id as string;
@@ -29,11 +28,7 @@ export default function EditProductPage() {
   const [margin, setMargin] = useState(0);
   const [profit, setProfit] = useState(0);
 
-  useEffect(() => {
-    fetchProduct();
-  }, [productId]);
-
-  const fetchProduct = async () => {
+  const fetchProduct = useCallback(async () => {
     try {
       setLoading(true);
       const data = await productsApi.getById(productId);
@@ -72,7 +67,11 @@ export default function EditProductPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [productId]);
+
+  useEffect(() => {
+    fetchProduct();
+  }, [fetchProduct]);
 
   useEffect(() => {
     if (formData.purchase_price > 0) {
@@ -308,29 +307,3 @@ export default function EditProductPage() {
   );
 }
 
-const MOCK_PRODUCTS: any[] = [
-  {
-    id: '1',
-    name: 'Amul Milk (1L)',
-    category: 'dairy',
-    purchase_price: 60,
-    selling_price: 64,
-    current_stock: 42,
-    min_stock_alert: 10,
-    expiry_date: '2026-06-01',
-    unit: 'pcs',
-    barcode: '123456789'
-  },
-  {
-    id: '2',
-    name: 'Fortune Oil (1L)',
-    category: 'grocery',
-    purchase_price: 140,
-    selling_price: 155,
-    current_stock: 5,
-    min_stock_alert: 10,
-    unit: 'pcs',
-    expiry_date: null,
-    barcode: null
-  },
-];

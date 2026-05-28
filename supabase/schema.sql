@@ -63,3 +63,17 @@ CREATE POLICY "Owners can manage sales" ON sales FOR ALL USING (auth.uid() = own
 CREATE POLICY "Owners can manage sale items" ON sale_items FOR ALL USING (
   EXISTS (SELECT 1 FROM sales WHERE sales.id = sale_items.sale_id AND sales.owner_id = auth.uid())
 );
+
+-- 5. Expenses
+CREATE TABLE expenses (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  owner_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  category TEXT NOT NULL CHECK (category IN ('rent', 'salary', 'electricity', 'other')),
+  amount NUMERIC(10, 2) NOT NULL,
+  date DATE DEFAULT CURRENT_DATE,
+  note TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Owners can manage expenses" ON expenses FOR ALL USING (auth.uid() = owner_id);

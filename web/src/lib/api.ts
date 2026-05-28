@@ -58,9 +58,8 @@ export const productsApi = {
 
 export const salesApi = {
   async create(sale: Omit<Sale, 'id' | 'created_at'>, items: Omit<SaleItem, 'id' | 'sale_id' | 'created_at'>[]) {
-    // Start a transaction-like process (using Supabase functions or multiple calls)
-    // For MVP, we'll do two separate calls (ideally this should be an RPC or Edge Function)
-    
+    // Start a transaction-like process
+    // 1. Create the sale
     const { data: saleData, error: saleError } = await supabase
       .from('sales')
       .insert([sale])
@@ -69,6 +68,7 @@ export const salesApi = {
     
     if (saleError) throw saleError;
 
+    // 2. Prepare and insert sale items
     const saleItems = items.map(item => ({
       ...item,
       sale_id: saleData.id
@@ -79,6 +79,25 @@ export const salesApi = {
       .insert(saleItems);
     
     if (itemsError) throw itemsError;
+
+    // 3. Update stock levels for each product
+    // Note: In a production app, this should be done via a database RPC function 
+    // to ensure atomicity and prevent race conditions.
+    for (const item of items) {
+      // Get current stock
+      const { data: product } = await supabase
+        .from('products')
+        .select('current_stock')
+        .eq('id', item.product_id)
+        .single();
+
+      if (product) {
+        await supabase
+          .from('products')
+          .update({ current_stock: product.current_stock - item.quantity })
+          .eq('id', item.product_id);
+      }
+    }
 
     return saleData as Sale;
   },

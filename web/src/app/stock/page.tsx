@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import SearchFilter from '@/components/SearchFilter';
 import ProductCard from '@/components/ProductCard';
 import { Plus, Loader2 } from 'lucide-react';
@@ -9,9 +8,9 @@ import { Product } from '@/shared/types';
 import Link from 'next/link';
 import { productsApi } from '@/lib/api';
 import { isSupabaseConfigured } from '@/lib/supabase';
+import { MOCK_PRODUCTS } from '@/lib/mockData';
 
 export default function StockPage() {
-  const { t } = useTranslation();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,8 +34,6 @@ export default function StockPage() {
       if (data && data.length > 0) {
         setProducts(data);
       } else {
-        // If data is empty or not configured, use mock data
-        console.log(isSupabaseConfigured ? 'No products in database, using mock data...' : 'Supabase not configured, using mock data...');
         setProducts(MOCK_PRODUCTS);
       }
     } catch (err: any) {
@@ -44,8 +41,6 @@ export default function StockPage() {
         console.error('Detailed fetch error:', err?.message || err);
         setError(err.message || 'Unknown connection error');
       }
-      
-      // Fallback to mock data
       setProducts(MOCK_PRODUCTS);
     } finally {
       setLoading(false);
@@ -109,33 +104,3 @@ export default function StockPage() {
     </div>
   );
 }
-
-// Keep mock data for fallback
-const MOCK_PRODUCTS: Product[] = [
-  {
-    id: '1',
-    owner_id: '1',
-    name: 'Amul Milk (1L)',
-    category: 'dairy',
-    purchase_price: 60,
-    selling_price: 64,
-    current_stock: 42,
-    min_stock_alert: 10,
-    expiry_date: '2026-06-01',
-    unit: 'pcs',
-    barcode: '123456789'
-  },
-  {
-    id: '2',
-    owner_id: '1',
-    name: 'Fortune Oil (1L)',
-    category: 'grocery',
-    purchase_price: 140,
-    selling_price: 155,
-    current_stock: 5,
-    min_stock_alert: 10,
-    unit: 'pcs',
-    expiry_date: null,
-    barcode: null
-  },
-];

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import MetricCard from '@/components/MetricCard';
 import { TrendingUp, AlertTriangle, Clock, PlusCircle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { productsApi, salesApi } from '@/lib/api';
+import { productsApi } from '@/lib/api';
 import { Product } from '@/shared/types';
 import { isSupabaseConfigured } from '@/lib/supabase';
 

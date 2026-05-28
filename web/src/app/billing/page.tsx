@@ -6,7 +6,8 @@ import { useCartStore } from '@/store/useCartStore';
 import { Product } from '@/shared/types';
 import { Search, ScanBarcode, Minus, Plus, Trash2, Banknote, QrCode, Loader2 } from 'lucide-react';
 import { productsApi, salesApi } from '@/lib/api';
-import { isSupabaseConfigured } from '@/lib/supabase';
+import { isSupabaseConfigured, getCurrentUser } from '@/lib/supabase';
+import { MOCK_PRODUCTS } from '@/lib/mockData';
 
 export default function BillingPage() {
   const { t } = useTranslation();
@@ -32,14 +33,12 @@ export default function BillingPage() {
       if (data && data.length > 0) {
         setProducts(data);
       } else {
-        console.log(isSupabaseConfigured ? 'No products found, using mock data...' : 'Supabase not configured, using mock data...');
         setProducts(MOCK_PRODUCTS);
       }
     } catch (err: any) {
       if (isSupabaseConfigured) {
         console.error('Error fetching products:', err?.message || err);
       }
-      // Fallback to mock data for demo
       setProducts(MOCK_PRODUCTS);
     } finally {
       setLoading(false);
@@ -54,8 +53,8 @@ export default function BillingPage() {
     if (!paymentMethod || items.length === 0) return;
     
     try {
-      // In a real app, get owner_id from auth
-      const owner_id = '1'; 
+      const user = await getCurrentUser();
+      const owner_id = user.id; 
       
       await salesApi.create({
         owner_id,
@@ -67,6 +66,8 @@ export default function BillingPage() {
       clearCart();
       setPaymentMethod(null);
       alert('Sale Completed Successfully!');
+      // Refresh products to show updated stock
+      fetchProducts();
     } catch (err: any) {
       console.error('Error completing sale:', err);
       alert('Failed to complete sale: ' + err.message);
@@ -234,18 +235,3 @@ export default function BillingPage() {
   );
 }
 
-const MOCK_PRODUCTS: Product[] = [
-  {
-    id: '1',
-    owner_id: '1',
-    name: 'Amul Milk (1L)',
-    category: 'dairy',
-    purchase_price: 60,
-    selling_price: 64,
-    current_stock: 42,
-    min_stock_alert: 10,
-    unit: 'pcs',
-    barcode: null,
-    expiry_date: null
-  },
-];

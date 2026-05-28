@@ -1,11 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { UserPlus, Shield, User, Phone, MoreVertical, Trash2, Edit2 } from 'lucide-react';
+import React from 'react';
+import { UserPlus, Shield, User, Phone, MoreVertical } from 'lucide-react';
 
 export default function StaffPage() {
-  const { t } = useTranslation();
 
   const mockStaff = [
     { id: '1', name: 'Rahul Kumar', role: 'owner', phone: '+91 98765 43210', initial: 'RK' },

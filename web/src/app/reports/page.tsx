@@ -1,12 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { TrendingUp, TrendingDown, DollarSign, Calendar, PieChart, ArrowUpRight, ArrowDownRight } from 'lucide-react';
-import MetricCard from '@/components/MetricCard';
+import { TrendingUp, TrendingDown, DollarSign, Calendar, PieChart, ArrowUpRight } from 'lucide-react';
 
 export default function ReportsPage() {
-  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'reports' | 'expenses'>('reports');
 
   return (
