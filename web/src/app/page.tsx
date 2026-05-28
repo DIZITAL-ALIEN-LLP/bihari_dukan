@@ -7,11 +7,14 @@ import { TrendingUp, AlertTriangle, Clock, PlusCircle, Loader2 } from 'lucide-re
 import Link from 'next/link';
 import { productsApi } from '@/lib/api';
 import { Product } from '@/shared/types';
-import { isSupabaseConfigured } from '@/lib/supabase';
+import { isSupabaseConfigured, getCurrentUser } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const { t } = useTranslation();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<'owner' | 'staff' | 'cashier'>('owner');
   const [metrics, setMetrics] = useState({
     todaySales: 0,
     todayProfit: 0,
@@ -21,13 +24,23 @@ export default function Home() {
   });
 
   useEffect(() => {
-    fetchDashboardData();
+    checkAuthAndFetchData();
   }, []);
 
-  const fetchDashboardData = async () => {
+  const checkAuthAndFetchData = async () => {
     try {
       setLoading(true);
       
+      const user = await getCurrentUser();
+      if (!user && isSupabaseConfigured) {
+        router.push('/login');
+        return;
+      }
+      
+      if (user?.profile?.role) {
+        setUserRole(user.profile.role as any);
+      }
+
       let products: Product[] = [];
       if (isSupabaseConfigured) {
         products = await productsApi.getAll();
@@ -143,12 +156,14 @@ export default function Home() {
             </div>
           </Link>
           
-          <Link href="/stock/add" className="flex flex-col items-center justify-center gap-2 p-4 bg-white border border-slate-200 text-primary rounded-2xl shadow-sm active:scale-95 transition-transform">
-            <PlusCircle size={24} className="text-secondary" />
-            <div className="flex flex-col items-center">
-              <span className="text-xs font-bold uppercase tracking-tight text-slate-700">{t('common.add_stock')}</span>
-            </div>
-          </Link>
+          {userRole === 'owner' && (
+            <Link href="/stock/add" className="flex flex-col items-center justify-center gap-2 p-4 bg-white border border-slate-200 text-primary rounded-2xl shadow-sm active:scale-95 transition-transform">
+              <PlusCircle size={24} className="text-secondary" />
+              <div className="flex flex-col items-center">
+                <span className="text-xs font-bold uppercase tracking-tight text-slate-700">{t('common.add_stock')}</span>
+              </div>
+            </Link>
+          )}
         </div>
       </section>
     </div>

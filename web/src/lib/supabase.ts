@@ -25,19 +25,26 @@ export const supabase = createClient(
 export const getCurrentUser = async () => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (user) return user;
+    if (!user) return null;
     
+    // Fetch profile from our table to get the role
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+      
+    return {
+      ...user,
+      profile: profile || { role: 'owner', name: user.email?.split('@')[0] } // Default fallback
+    };
+  } catch {
     // Fallback for demo mode
     return {
       id: 'd3b07384-d990-4395-9056-b054848074d1',
       email: 'demo@biharikirana.com',
-      user_metadata: { name: 'Demo Owner' }
-    };
-  } catch {
-    return {
-      id: 'd3b07384-d990-4395-9056-b054848074d1',
-      email: 'demo@biharikirana.com',
-      user_metadata: { name: 'Demo Owner' }
+      user_metadata: { name: 'Demo Owner' },
+      profile: { role: 'owner', name: 'Demo Owner' }
     };
   }
 };

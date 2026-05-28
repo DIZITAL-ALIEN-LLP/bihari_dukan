@@ -7,7 +7,7 @@ import { Plus, Loader2 } from 'lucide-react';
 import { Product } from '@/shared/types';
 import Link from 'next/link';
 import { productsApi } from '@/lib/api';
-import { isSupabaseConfigured } from '@/lib/supabase';
+import { isSupabaseConfigured, getCurrentUser } from '@/lib/supabase';
 import { MOCK_PRODUCTS } from '@/lib/mockData';
 
 export default function StockPage() {
@@ -16,10 +16,19 @@ export default function StockPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
+  const [userRole, setUserRole] = useState<'owner' | 'staff' | 'cashier'>('owner');
 
   useEffect(() => {
     fetchProducts();
+    checkRole();
   }, []);
+
+  const checkRole = async () => {
+    const user = await getCurrentUser();
+    if (user?.profile?.role) {
+      setUserRole(user.profile.role as any);
+    }
+  };
 
   const fetchProducts = async () => {
     try {
@@ -95,12 +104,14 @@ export default function StockPage() {
       </div>
 
       {/* Floating Action Button */}
-      <Link 
-        href="/stock/add"
-        className="fixed bottom-24 right-6 w-14 h-14 bg-primary text-white rounded-full shadow-2xl flex items-center justify-center active:scale-95 transition-transform z-40"
-      >
-        <Plus size={28} />
-      </Link>
+      {userRole === 'owner' && (
+        <Link 
+          href="/stock/add"
+          className="fixed bottom-24 right-6 w-14 h-14 bg-primary text-white rounded-full shadow-2xl flex items-center justify-center active:scale-95 transition-transform z-40"
+        >
+          <Plus size={28} />
+        </Link>
+      )}
     </div>
   );
 }
