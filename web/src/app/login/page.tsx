@@ -106,6 +106,30 @@ export default function LoginPage() {
 
             <div className="flex items-center gap-4 my-2">
               <div className="flex-1 h-px bg-slate-100" />
+              <span className="text-[10px] font-bold text-slate-300 uppercase">Demo Access</span>
+              <div className="flex-1 h-px bg-slate-100" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button 
+                onClick={() => router.push('/')}
+                className="bg-blue-50 text-primary py-3 rounded-xl text-xs font-bold border border-blue-100 active:bg-blue-100 transition-all"
+              >
+                Owner Login
+              </button>
+              <button 
+                onClick={() => {
+                  // In a real app, this would set a session/cookie
+                  router.push('/');
+                }}
+                className="bg-slate-50 text-slate-600 py-3 rounded-xl text-xs font-bold border border-slate-100 active:bg-slate-100 transition-all"
+              >
+                Staff Login
+              </button>
+            </div>
+
+            <div className="flex items-center gap-4 my-2">
+              <div className="flex-1 h-px bg-slate-100" />
               <span className="text-[10px] font-bold text-slate-300 uppercase">OR</span>
               <div className="flex-1 h-px bg-slate-100" />
             </div>
