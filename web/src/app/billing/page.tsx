@@ -54,6 +54,10 @@ export default function BillingPage() {
     
     try {
       const user = await getCurrentUser();
+      if (!user) {
+        alert('Please login to complete the sale');
+        return;
+      }
       const owner_id = user.id; 
       
       await salesApi.create({
