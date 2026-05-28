@@ -1,0 +1,13 @@
+[build]
+  # The folder where Netlify should start the build
+  base = "web"
+  
+  # The command to run to build the site
+  command = "npm run build"
+  
+  # The folder to publish (relative to the base directory)
+  publish = ".next"
+
+[[plugins]]
+  # Essential Next.js plugin for Netlify
+  package = "@netlify/plugin-nextjs"
