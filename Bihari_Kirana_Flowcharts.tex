@@ -1,0 +1,165 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+\geometry{margin=1in}
+\usetikzlibrary{shapes.geometric, arrows, positioning, shadow}
+
+% Color Definitions
+\definecolor{primaryBlue}{HTML}{1E3A8A}
+\definecolor{secondaryGreen}{HTML}{22C55E}
+\definecolor{surfaceLavender}{HTML}{FAF8FF}
+\definecolor{alertSalmon}{HTML}{FEE2E2}
+\definecolor{codeGray}{rgb}{0.95,0.95,0.95}
+
+% TikZ Styles
+\tikzstyle{startstop} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black, fill=blue!10, drop shadow]
+\tikzstyle{process} = [rectangle, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=orange!10, drop shadow]
+\tikzstyle{decision} = [diamond, aspect=2, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=green!10, drop shadow]
+\tikzstyle{arrow} = [thick,->,>=stealth, color=primaryBlue]
+
+% Code Listing Style
+\lstset{
+    backgroundcolor=\color{codeGray},
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    captionpos=b,
+    commentstyle=\color{gray},
+    keywordstyle=\color{primaryBlue},
+    stringstyle=\color{secondaryGreen},
+    frame=single
+}
+
+\begin{document}
+
+% --- Title Page ---
+\begin{titlepage}
+   \centering
+   \vspace*{2cm}
+   \Huge \textbf{Bihari Kirana Digital Alien}\\
+   \vspace{0.5cm}
+   \Large Technical Specification \& Workflow Manual\\
+   \vspace{1.5cm}
+   \line(1,0){400}\\
+   \vspace{1cm}
+   \large \textbf{Project:} Inventory Management \& POS for Retail\\
+   \textbf{Focus:} Efficiency, Bilingual Support, \& Profit Analytics\\
+   \vfill
+   \line(1,0){400}\\
+   \medskip
+   \small Created for BIHARI\_KIRANA Operations
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% --- Section 1: Product Flow ---
+\section{Product Lifecycle Flow (सामान का चक्र)}
+This flowchart describes the physical and digital journey of an item within the store ecosystem.
+
+\begin{center}
+\begin{tikzpicture}[node distance=2cm]
+\node (start) [startstop] {Stock Arrival (आवक)};
+\node (reg) [process, below of=start] {Digital Registration};
+\node (shelf) [process, below of=reg] {Inventory Active};
+\node (monitor) [decision, below of=shelf, yshift=-0.5cm] {Sale Occurs?};
+\node (update) [process, right of=monitor, xshift=3.5cm] {Stock Decrement};
+\node (lowstock) [decision, below of=monitor, yshift=-1cm] {Below Min Limit?};
+\node (restock) [process, left of=lowstock, xshift=-3.5cm] {Procurement};
+
+\draw [arrow] (start) -- (reg);
+\draw [arrow] (reg) -- (shelf);
+\draw [arrow] (shelf) -- (monitor);
+\draw [arrow] (monitor) -- node[anchor=south] {Yes} (update);
+\draw [arrow] (update) |- (lowstock);
+\draw [arrow] (monitor) -- node[anchor=east] {No} (lowstock);
+\draw [arrow] (lowstock) -- node[anchor=south] {Yes} (restock);
+\draw [arrow] (restock) |- (start);
+\draw [arrow] (lowstock) -- node[anchor=east] {No} ++(0,-1.5) -| (shelf);
+\end{tikzpicture}
+\end{center}
+
+% --- Section 2: Earning Flow ---
+\section{Earning \& Financial Flow (कमाई का चक्र)}
+How the system tracks every rupee from checkout to net profit.
+
+\begin{center}
+\begin{tikzpicture}[node distance=2.2cm]
+\node (sale) [startstop] {POS Transaction};
+\node (revenue) [process, below of=sale] {Gross Revenue (Cash/UPI)};
+\node (purchase) [process, below of=revenue] {Deduct Unit Cost (COGS)};
+\node (gross) [process, right of=purchase, xshift=3.5cm] {Gross Profit};
+\node (expense) [process, below of=purchase] {Deduct Op-Expenses};
+\node (net) [startstop, below of=expense, fill=green!20] {Net Profit (कमाई)};
+
+\draw [arrow] (sale) -- (revenue);
+\draw [arrow] (revenue) -- (purchase);
+\draw [arrow] (purchase) -- (gross);
+\draw [arrow] (purchase) -- (expense);
+\draw [arrow] (expense) -- (net);
+\end{tikzpicture}
+\end{center}
+
+\newpage
+
+% --- Section 3: Technical Stack ---
+\section{Technical Architecture}
+The system is built for high availability and low latency in a retail environment.
+
+\subsection{Tech Stack Details}
+\begin{itemize}[label=$\bullet$]
+    \item \textbf{Frontend:} Next.js 15 (App Router) with TypeScript for type-safe components.
+    \item \textbf{Backend:} Supabase (PostgreSQL) for real-time inventory updates.
+    \item \textbf{Styling:} Tailwind CSS 3.4 for a responsive, mobile-first retail UI.
+    \item \textbf{State Management:} Zustand for fast, lightweight cart management.
+    \item \textbf{Internationalization:} i18next for Bilingual (English/Hindi) support.
+\end{itemize}
+
+\subsection{Database Schema (SQL)}
+The core logic relies on the following relational structure:
+\begin{lstlisting}[language=SQL]
+CREATE TABLE products (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  name_hi TEXT,
+  purchase_price DECIMAL(10,2),
+  selling_price DECIMAL(10,2),
+  current_stock INTEGER,
+  min_stock_alert INTEGER DEFAULT 5,
+  expiry_date DATE
+);
+\end{lstlisting}
+
+% --- Section 4: Operational Logic ---
+\section{Business Intelligence Logic}
+
+\subsection{Profit Calculation}
+The system calculates real-time margins in the \texttt{Add/Edit Product} screens:
+\begin{equation}
+Profit\_Per\_Unit = Selling\_Price - Purchase\_Price
+\end{equation}
+\begin{equation}
+Margin\% = \left( \frac{Profit\_Per\_Unit}{Purchase\_Price} \right) \times 100
+\end{equation}
+
+\subsection{Alert Thresholds}
+\begin{enumerate}
+    \item \textbf{Low Stock:} Triggered when $Current\_Stock \leq Min\_Stock\_Alert$.
+    \item \textbf{Expiry Alert:} Highlighted if $Today > (Expiry\_Date - 7\,days)$.
+\end{enumerate}
+
+\section{Setup Instructions}
+To run the system locally:
+\begin{enumerate}
+    \item Copy \texttt{example.env} to \texttt{.env} in the \texttt{web/} directory.
+    \item Populate \texttt{NEXT_PUBLIC_SUPABASE_URL} and \texttt{NEXT_PUBLIC_SUPABASE_ANON_KEY}.
+    \item Run \texttt{npm install} followed by \texttt{npm run dev}.
+\end{enumerate}
+
+\end{document}
