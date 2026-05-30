@@ -77,3 +77,24 @@ CREATE TABLE expenses (
 
 ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Owners can manage expenses" ON expenses FOR ALL USING (auth.uid() = owner_id);
+
+-- 6. Automate Profile Creation on Signup
+-- This function runs every time a new user is created in Supabase Auth
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, name, phone, role)
+  VALUES (
+    NEW.id, 
+    COALESCE(NEW.raw_user_meta_data->>'name', NEW.email), 
+    NEW.phone, 
+    COALESCE(NEW.raw_user_meta_data->>'role', 'owner')
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger the function after every insert on auth.users
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
